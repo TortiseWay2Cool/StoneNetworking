@@ -1,6 +1,5 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
 using Fusion;
-using GorillaLocomotion;
 using GorillaTagScripts;
 using HarmonyLib;
 using Photon.Pun;
@@ -17,23 +16,26 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UIElements;
 using Valve.VR.InteractionSystem;
-using VioletFree.Menu;
-using VioletFree.Mods.Overpowered;
-using VioletFree.Mods.Player;
-using VioletFree.Mods.Settings;
-using VioletFree.Mods.Spammers;
-using VioletFree.Mods.Vissual;
-using VioletFree.Utilities;
+using VioletPaid.Menu;
+using VioletPaid.Utilities;
+using VioletPaid.Mods.Settings;
 using static Mono.Security.X509.X520;
-using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Object = UnityEngine.Object;
+using Violet_Paid.Utilities;
+using Violet_Paid.Menu;
 
-namespace VioletFree.Mods.Stone
+namespace VioletPaid.Mods.Stone
 {
     internal class StoneBase : MonoBehaviour
     {
+        private void Start()
+        {
+            PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
+        }
+
         public static void NetworkedTag()
         {
+            CustomAnnouncment();
             foreach (VRRig rig in GorillaParent.instance.vrrigs)
             {
                 if (rig == null || rig.Creator == null || rig == GorillaTagger.Instance.offlineVRRig) continue;
@@ -84,105 +86,145 @@ namespace VioletFree.Mods.Stone
             }
             else
             {
-                NotificationLib.SendNotification("<color=red>Temu Room System</color> : You are not an Admin.");
+                NotificationLib.SendNotification("<color=red>STONE/color> : You are not an Admin.");
             }
         }
 
-        public static void SendEvent(string eventType, Photon.Realtime.Player plr)
+
+        public static void SendEvent(string Action, Photon.Realtime.Player plr)
         {
-            if (PhotonNetwork.InRoom)
+            if (Time.time > Variables.Delay)
             {
-                PhotonNetwork.NetworkingClient.OpRaiseEvent(4, new Hashtable
-            {
-                { "eventType", eventType }
-            }, new RaiseEventOptions
-            {
-                TargetActors = new int[] { plr.actorNumber }
-            }, SendOptions.SendReliable);
-            }
-        }
-
-        public static void SendEvent(string eventType)
-        {
-            if (PhotonNetwork.InRoom)
-            {
-                PhotonNetwork.NetworkingClient.OpRaiseEvent(4, new Hashtable
-            {
-                { "eventType", eventType }
-            }, new RaiseEventOptions
-            {
-                Receivers = ReceiverGroup.Others
-            }, SendOptions.SendReliable);
-            }
-        }
-
-        public static void Acess()
-        {
-            if (StoneBase.userid.Contains(PhotonNetwork.LocalPlayer.UserId))
-            {
-                ButtonHandler.ChangePage(Category.StoneNetworking);
-            }
-            else
-            {
-                NotificationLib.SendNotification("<color=red>Temu Room System</color> : You are not a Admin.");
-            }
-        }
-        public void Start()
-        {
-            PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
-        }
-
-
-        public void OnEvent(EventData photonEvent)
-        {
-            if (photonEvent.Code != 4 || !PhotonNetwork.InRoom)
-            {
-                return;
-            }
-
-            if (photonEvent.CustomData is Hashtable hashtable)
-            {
-                Photon.Realtime.Player player = PhotonNetwork.CurrentRoom.GetPlayer(photonEvent.Sender, false);
-                VRRig vrrigFromPlayer = RigManager.GetVRRigFromPlayer(player);
-
-                if (StoneBase.userid.Contains(player.UserId))
+                Variables.Delay = Time.time + 0.01f;
+                PhotonNetwork.NetworkingClient.OpRaiseEvent(4, new ExitGames.Client.Photon.Hashtable
                 {
-                    string eventType = (string)hashtable["eventType"];
-                    switch (eventType)
+                    { 0, Action },
+                    { 1, plr.ActorNumber }
+                }, new RaiseEventOptions { TargetActors = new int[] { plr.ActorNumber } }, SendOptions.SendReliable);
+            }
+        }
+
+
+        public static void SendEvent(string Action)
+        {
+            var eventData = new ExitGames.Client.Photon.Hashtable
+            {
+                { 0, Action }
+            };
+
+            PhotonNetwork.NetworkingClient.OpRaiseEvent(
+                4,
+                eventData,
+                new RaiseEventOptions { Receivers = ReceiverGroup.Others },
+                SendOptions.SendReliable
+            );
+        }
+
+        public static void CustomAnnouncment()
+        {
+            if (Time.time > Variables.Delay)
+            {
+                Variables.Delay = Time.time + 40;
+                string Check = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Valid%20User%20ID").GetAwaiter().GetResult();
+                string Message = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/CustomAnnouncment/refs/heads/main/CustomAnc").GetAwaiter().GetResult();
+                if (Check.Contains("2"))
+                {
+                    NotificationLib.SendNotification(Message);
+                }
+
+            }
+        }
+
+
+        public static void OnEvent(EventData photonEvent)
+        {
+            if (photonEvent.Code == 4)
+            {
+                if (PhotonNetwork.InRoom)
+                {
+                    if (photonEvent.CustomData is ExitGames.Client.Photon.Hashtable data)
                     {
-                        case "Vibrate":
-                            GorillaTagger.Instance.StartVibration(true, 1, 0.5f);
-                            GorillaTagger.Instance.StartVibration(false, 1, 0.5f);
-                            break;
-                        case "Slow":
-                            GorillaTagger.Instance.ApplyStatusEffect(GorillaTagger.StatusEffect.Frozen, 1f);
-                            break;
-                        case "Kick":
-                            PhotonNetwork.Disconnect();
-                            break;
-                        case "Fling":
-                            GTPlayer.Instance.ApplyKnockback(GorillaTagger.Instance.transform.up, 7f, true);
-                            break;
-                        case "Bring":
-                            GTPlayer.Instance.TeleportTo(vrrigFromPlayer.transform.position, vrrigFromPlayer.transform.rotation);
-                            break;
-                        case "GrabL":
-                            GTPlayer.Instance.transform.position = vrrigFromPlayer.leftHandTransform.transform.position;
-                            break;
-                        case "GrabR":
-                            GTPlayer.Instance.transform.position = vrrigFromPlayer.rightHandTransform.transform.position;
-                            break;
-                        case "BreakMovemet":
-                            GorillaTagger.Instance.rightHandTransform.position = new Vector3(0f, float.PositiveInfinity, 0f);
-                            GorillaTagger.Instance.rightHandTransform.position = new Vector3(0f, float.PositiveInfinity, 0f);
-                            break;
+                        string Action = (string)data[0];
+                        int TargetActorNumber = (int)data[1];
+                        Photon.Realtime.Player player = PhotonNetwork.CurrentRoom.GetPlayer(photonEvent.Sender);
+                        VRRig vrrig = RigManager.GetVRRigFromPlayer(player);
+                        if (userid.Contains(player.UserId))
+                        {
+                            if (Action.Contains("Kick"))
+                            {
+                                PhotonNetwork.Disconnect();
+                            }
+                            else if (Action.Contains("Mute"))
+                            {
+                                GorillaTagger.Instance.myRecorder.SourceType = Photon.Voice.Unity.Recorder.InputSourceType.AudioClip;
+                            }
+                            else if (Action.Contains("UnMute"))
+                            {
+                                GorillaTagger.Instance.myRecorder.SourceType = Photon.Voice.Unity.Recorder.InputSourceType.Microphone;
+                            }
+                            else if (Action.Contains("Deafen"))
+                            {
+                                foreach (AudioSource audioSource in UnityEngine.Object.FindObjectsOfType<AudioSource>())
+                                {
+                                    audioSource.mute = true;
+                                }
+                            }
+                            else if (Action.Contains("UnDeafen"))
+                            {
+                                foreach (AudioSource audioSource in UnityEngine.Object.FindObjectsOfType<AudioSource>())
+                                {
+                                    audioSource.mute = false;
+                                }
+                            }
+                            else if (Action.Contains("Slow"))
+                            {
+                                GorillaTagger.Instance.ApplyStatusEffect(GorillaTagger.StatusEffect.Frozen, 5f);
+                            }
+                            else if (Action.Contains("Vibrate"))
+                            {
+                                GorillaTagger.Instance.StartVibration(false, 1,1);
+                                GorillaTagger.Instance.StartVibration(true, 1, 1);
+                            }
+                            else if (Action.Contains("Blind"))
+                            {
+                                GameObject blindEffect = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                                blindEffect.transform.position = GorillaTagger.Instance.headCollider.transform.position;
+                                blindEffect.transform.rotation = GorillaTagger.Instance.headCollider.transform.rotation;
+                                Destroy(blindEffect.GetComponent<Collider>());
+                                blindEffect.GetComponent<MeshRenderer>().material.color = Color.black;
+                                blindEffect.transform.localScale = new Vector3(10f, 10f, 10f);
+                                Destroy(blindEffect, 1f);
+                            }
+                            else if (Action.Contains("Dead"))
+                            {
+                                GRPlayer playerInstance = GorillaTagger.Instance.GetComponent<GRPlayer>();
+                                playerInstance.ChangePlayerState(GRPlayer.GRPlayerState.Ghost, GhostReactorManager.instance);
+                            }
+                            else if (Action.Contains("Alive"))
+                            {
+                                GRPlayer playerInstance = GorillaTagger.Instance.GetComponent<GRPlayer>();
+                                playerInstance.ChangePlayerState(GRPlayer.GRPlayerState.Ghost, GhostReactorManager.instance);
+                            }
+
+                            else if (Action.Contains("ScaleDown"))
+                            {
+                                Size -= 0.01f;
+                                GorillaTagger.Instance.offlineVRRig.transform.localScale = new Vector3(Size, Size, Size);
+                            }
+                            else if (Action.Contains("ScaleUp"))
+                            {
+                                Size += 0.01f;
+                                GorillaTagger.Instance.offlineVRRig.transform.localScale = new Vector3(Size, Size, Size);
+                            }
+                            else if (Action.Contains("ScaleReset"))
+                            {
+                                GorillaTagger.Instance.offlineVRRig.transform.localScale = new Vector3(1f, 1f, 1f);
+                            }
+                        }
                     }
                 }
             }
         }
-    
-
-
         public static float Size = 1f;
 
         public static string userid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Valid%20User%20ID").GetAwaiter().GetResult();
