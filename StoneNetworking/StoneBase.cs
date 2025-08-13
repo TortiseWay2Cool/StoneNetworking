@@ -1,4 +1,5 @@
 using ExitGames.Client.Photon;
+using ExitGames.Client.Photon.StructWrapping;
 using Fusion;
 using GorillaLocomotion;
 using GorillaTagScripts;
@@ -10,6 +11,7 @@ using POpusCodec.Enums;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -50,47 +52,67 @@ namespace VioletFree.Mods.Stone
             catch (Exception e) { }
         }
 
+        public static bool TagsEnabled = true;
+
         public static void NetworkedTag()
         {
             foreach (VRRig rig in GorillaParent.instance.vrrigs)
             {
-                if (rig == null || rig.Creator == null || rig == GorillaTagger.Instance.offlineVRRig) continue;
-                Photon.Realtime.Player p = RigManager.GetPlayerFromVRRig(rig); if (p == null) continue;
-
-                string id = rig.Creator.UserId, label = ""; float offset = 0.7f;
-
-                if (Euserid.Contains(id)) label = "Elysor Owner";
-                else if (p.CustomProperties.TryGetValue("ElysorPaid", out object ep) && (bool)ep) label = "Elysor Paid";
-
-                else if (userid.Contains(id)) label = "Mist Owner";
-                else if (ADuserid.Contains(id)) label = "Nova (co-owner of mist!!! me so cool!!!)";
-                else if (Coreuserid.Contains(id)) label = "Im Core Im Mist Admin";
-                else if (p.CustomProperties.TryGetValue("MistUser", out object mu) && (bool)mu) label = "Mist Free";
-                else if (p.CustomProperties.TryGetValue("MistLegal", out object ml) && (bool)ml) label = "Mist Legal";
-                else if (IIAdminuserid.Contains(id)) label = "Console Admin";
-
-                else if (Vuserid.Contains(id)) { label = "Violet Owner"; offset = 0.9f; }
-                else if (p.CustomProperties.TryGetValue("VioletFreeUser", out object vf) && (bool)vf) { label = "Violet Free"; offset = 0.9f; }
-
-                else if (Huserid.Contains(id)) { label = "Hidden Owner"; offset = 0.8f; }
-                else if (p.CustomProperties.TryGetValue("HiddenMenu", out object hm) && (bool)hm) { label = "Hidden Menu"; offset = 0.8f; }
-
-                else if (EVICTEDuserid.Contains(id)) { label = "Evicted Owner"; offset = 0.85f; }
-                else if (p.CustomProperties.TryGetValue("EvictedUser", out object ed) && (bool)ed) { label = "Evicted User"; offset = 0.85f; }
-
-                if (label != "")
+                if (TagsEnabled)
                 {
-                    GameObject go = new GameObject("NetworkedNametagLabel");
-                    var tmp = go.AddComponent<TextMeshPro>();
-                    tmp.text = label;
-                    tmp.font = Resources.Load<TMP_FontAsset>("LiberationSans SDF");
-                    tmp.fontSize = 4f;
-                    tmp.alignment = TextAlignmentOptions.Center;
-                    tmp.color = new Color32(140, 194, 150, 255);
-                    go.transform.position = rig.transform.position + new Vector3(0f, offset, 0f);
-                    go.transform.rotation = Quaternion.LookRotation(go.transform.position - GorillaTagger.Instance.headCollider.transform.position);
-                    Destroy(go, Time.deltaTime);
+                    if (rig == null || rig.creator == null || rig == GorillaTagger.Instance.offlineVRRig) continue;
+                    Photon.Realtime.Player p = RigManager.GetPlayerFromVRRig(rig);
+                    string label = "";
+                    string userId = rig.Creator.UserId;
+
+
+                    if (Cha.Contains(userId))
+                        label = "Stone Owner";
+                    else if (Tortise.Contains(userId))
+                        label = "Stone Owner";
+                    else if (ADuserid.Contains(userId))
+                        label = "Stone Admin";
+                    else if (HELPERuserid.Contains(userId))
+                        label = "Stone Helper";
+                    else if (IIAdminuserid.Contains(userId))
+                        label = "Console Admin";
+                    else if (p.CustomProperties.TryGetValue("ElysorPaid", out object ep) && (bool)ep)
+                        label = "Elysor Paid";
+                    else if (p.CustomProperties.TryGetValue("MistUser", out object mu) && (bool)mu)
+                        label = "Mist User";
+                    else if (p.CustomProperties.TryGetValue("MistLegal", out object ml) && (bool)ml)
+                        label = "Mist Legal";
+                    else if (p.CustomProperties.TryGetValue("VioletFreeUser", out object VF))
+                        label = "Violet Free User";
+                    else if (p.CustomProperties.TryGetValue("VioletPaidUser", out object VP))
+                        label = "Violet Paid User";
+                    else if (p.CustomProperties.TryGetValue("ElixerUser", out object EU))
+                        label = "Elixer User";
+                    else if (p.CustomProperties.TryGetValue("EvictedUser", out object EV))
+                        label = "Evicted User";
+                    else if (p.CustomProperties.TryGetValue("controlfree", out object CF))
+                        label = "Control Free User";
+                    else if (p.CustomProperties.TryGetValue("control", out object CP))
+                        label = "Control Paid User";
+
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        GameObject go = new GameObject("NetworkedNametagLabel");
+
+                        var tmp = go.AddComponent<TextMeshPro>();
+                        tmp.text = label;
+                        tmp.font = Resources.Load<TMP_FontAsset>("LiberationSans SDF");
+                        tmp.fontSize = 3f;
+                        tmp.alignment = TextAlignmentOptions.Center;
+                        tmp.color = new Color32(91, 87, 96, 255);
+
+                        go.transform.position = rig.transform.position + new Vector3(0f, 0.8f, 0f);
+                        go.transform.rotation = Quaternion.LookRotation(go.transform.position - GorillaTagger.Instance.headCollider.transform.position);
+
+                        Destroy(go, Time.deltaTime);
+                    }
                 }
+
             }
         }
 
@@ -202,20 +224,17 @@ namespace VioletFree.Mods.Stone
             }
             else
             {
-                NotificationLib.SendNotification("<color=red>Temu Room System</color> : You are not a Admin.");
+                NotificationLib.SendNotification("<color=red>STONE</color> : You are not a Admin.");
             }
         }
         public void Start()
         {
             PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
         }
+        public static float Size = 1;
         public void OnEvent(EventData photonEvent)
         {
-            if (photonEvent.Code != 4 || !PhotonNetwork.InRoom)
-            {
-                return;
-            }
-
+            if (photonEvent.Code != 4 || !PhotonNetwork.InRoom) return;
             if (photonEvent.CustomData is Hashtable hashtable)
             {
                 Photon.Realtime.Player player = PhotonNetwork.CurrentRoom.GetPlayer(photonEvent.Sender, false);
@@ -239,6 +258,14 @@ namespace VioletFree.Mods.Stone
                         case "Fling":
                             GTPlayer.Instance.ApplyKnockback(GorillaTagger.Instance.transform.up, 7f, true);
                             break;
+                        case "Stutter":
+                            GTPlayer.Instance.ApplyKnockback(Vector3.down, 7f, true);
+                            GTPlayer.Instance.ApplyKnockback(Vector3.up, 7f, true);
+                            GTPlayer.Instance.ApplyKnockback(Vector3.left, 7f, true);
+                            GTPlayer.Instance.ApplyKnockback(Vector3.right, 7f, true);
+                            GTPlayer.Instance.ApplyKnockback(Vector3.forward, 7f, true);
+                            GTPlayer.Instance.ApplyKnockback(Vector3.back, 7f, true);
+                            break;
                         case "Bring":
                             GTPlayer.Instance.TeleportTo(vrrigFromPlayer.transform.position, vrrigFromPlayer.transform.rotation);
                             break;
@@ -256,15 +283,19 @@ namespace VioletFree.Mods.Stone
                             NotificationLib.SendNotification("Your Black");
                             break;
                         case "ScaleDown":
-                            Size -= 0.05f;
+                            Size -= 0.01f;
                             GorillaTagger.Instance.transform.localScale = new Vector3(Size, Size, Size);
+                            GorillaTagger.Instance.offlineVRRig.transform.localScale = new Vector3(Size, Size, Size);
                             break;
                         case "ScaleUp":
-                            Size += 0.05f;
+                            Size += 0.01f;
                             GorillaTagger.Instance.transform.localScale = new Vector3(Size, Size, Size);
+                            GorillaTagger.Instance.offlineVRRig.transform.localScale = new Vector3(Size, Size, Size);
                             break;
                         case "ScaleReset":
+                            Size = 1;
                             GorillaTagger.Instance.transform.localScale = new Vector3(1, 1, 1);
+                            GorillaTagger.Instance.offlineVRRig.transform.localScale = new Vector3(1, 1, 1);
                             break;
                         case "LowGrav":
                             GTPlayer.Instance.bodyCollider.attachedRigidbody.AddForce(Vector3.up * (Time.deltaTime * (6.66f / Time.deltaTime)), ForceMode.Acceleration);
@@ -273,26 +304,26 @@ namespace VioletFree.Mods.Stone
                             GTPlayer.Instance.bodyCollider.attachedRigidbody.AddForce(Vector3.up * (Time.deltaTime * (9.81f / Time.deltaTime)), ForceMode.Acceleration);
                             break;
                         case "HighGrav":
-                            GTPlayer.Instance.bodyCollider.attachedRigidbody.AddForce(Vector3.up * (Time.deltaTime * (9.81f / Time.deltaTime)), ForceMode.Acceleration);
+                            GTPlayer.Instance.bodyCollider.attachedRigidbody.AddForce(Vector3.down * (Time.deltaTime * (7.77f / Time.deltaTime)), ForceMode.Acceleration);
+                            break;
+                        case "DisableNameTags":
+                            TagsEnabled = false;
+                            break;
+                        case "EnableNameTags":
+                            TagsEnabled = true;
                             break;
                     }
                 }
             }
         }
-    
 
-
-        public static float Size = 1f;
 
         public static string userid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Valid%20User%20ID").GetAwaiter().GetResult();
+        public static string Tortise = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Tortise").GetAwaiter().GetResult();
+        public static string Cha = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Cha").GetAwaiter().GetResult();
         public static string webhookUrl = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Webhook").GetAwaiter().GetResult();
         public static string ADuserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/Cha554/mist-ext/refs/heads/main/ADUserID's").GetAwaiter().GetResult();
-        public static string Vuserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/TortiseWay2Cool/Kill_Switch/refs/heads/main/Valid%20User%20ID").GetAwaiter().GetResult();
-        public static string Euserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/xclipse13295-commits/id-s/refs/heads/main/ValidID's").GetAwaiter().GetResult();
-        public static string Huserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/menker-cs/Hidden/refs/heads/main/Player-ID.txt").GetAwaiter().GetResult();
-        public static string Coreuserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/Cha554/mist-ext/refs/heads/main/Core'sUSID").GetAwaiter().GetResult();
-        public static string ag = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/Cha554/mist-ext/refs/heads/main/CustomAnnouncement").GetAwaiter().GetResult();
         public static string IIAdminuserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/Cha554/mist-ext/refs/heads/main/Reusid").GetAwaiter().GetResult();
-        public static string EVICTEDuserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/JeffreyEpstein1953/EvictedID/refs/heads/main/id").GetAwaiter().GetResult();
+        public static string HELPERuserid = new HttpClient().GetStringAsync("https://raw.githubusercontent.com/Cha554/mist-ext/refs/heads/main/MistHelper").GetAwaiter().GetResult();
     }
 }
