@@ -1,18 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VioletFree.Utilities;
 using VioletFree.Mods.Stone;
 using GunTemplateee;
 using UnityEngine;
+using Photon.Realtime;
 
 namespace VioletFree.Mods.Stone
 {
     internal class StoneConfig_Config
     {
-        public static string StoneVersion = "1.0.0"; // If this is outdated, please update it.
-        public static string ProjectName = "Violet";
-
         public static void GunEvent(string Event)
         {
             GunTemplate.StartBothGuns(() =>
@@ -22,6 +20,11 @@ namespace VioletFree.Mods.Stone
         }
 
         public static void EventAll(string Event)
+        {
+            StoneBase.SendEvent(Event);
+        }
+
+        public static void EventPlayer(string Event, Photon.Realtime.Player plr)
         {
             StoneBase.SendEvent(Event);
         }
